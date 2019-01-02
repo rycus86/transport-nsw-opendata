@@ -74,6 +74,7 @@ func NextTrips(timetableSupplier func() *timetables.Timetable) func(http.Respons
 			json.NewEncoder(writer).Encode(trips)
 		} else if strings.Contains(accept, "text/html") {
 			writer.Header().Add("Content-Type", "text/html")
+			writer.Header().Add("Cache-Control", "public, max-age=60")
 			writer.WriteHeader(200)
 
 			content := ""
@@ -103,6 +104,7 @@ func NextTrips(timetableSupplier func() *timetables.Timetable) func(http.Respons
 				content)))
 		} else {
 			writer.Header().Add("Content-Type", "text/plain")
+			writer.Header().Add("Cache-Control", "public, max-age=60")
 			writer.WriteHeader(200)
 
 			for _, trip := range trips {
