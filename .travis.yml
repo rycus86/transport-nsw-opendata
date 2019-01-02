@@ -6,13 +6,6 @@ install: skip
 
 jobs:
   include:
-    - stage: test
-      before_install:
-        - npm install -g snyk
-      script:
-        - snyk test
-        - snyk monitor
-
     - &deploy-stage
       stage: build and deploy
       sudo: required
