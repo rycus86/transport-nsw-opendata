@@ -28,7 +28,13 @@ var (
 			if timetable, err := cli.SydneyTrains(); err != nil {
 				fmt.Println("Failed to update Sydney trains timetable:", err)
 			} else {
+				previous, hadPrevious := currentTimetables.Load("sydneytrains")
+
 				currentTimetables.Store("sydneytrains", timetable)
+
+				if hadPrevious {
+					previous.(*timetables.Timetable).Delete()
+				}
 			}
 		},
 	}

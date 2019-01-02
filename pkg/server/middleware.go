@@ -3,13 +3,30 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rycus86/transport-nsw-opendata/pkg/timetables"
 	"net/http"
 	"strings"
+	"time"
 )
+
+var (
+	tripsHistogram = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name:        "req_trips",
+		Help:        "Histogram for serving requests related to trips",
+		ConstLabels: prometheus.Labels{"endpoint_type": "trips"},
+	})
+)
+
+func init() {
+	prometheus.MustRegister(tripsHistogram)
+}
 
 func NextTrips(timetableSupplier func() *timetables.Timetable) func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		reqStart := time.Now()
+		defer func() { tripsHistogram.Observe(time.Since(reqStart).Seconds()) }()
+
 		parts := strings.Split(request.URL.Path, "/")
 		if len(parts) < 2 {
 			writer.WriteHeader(400)

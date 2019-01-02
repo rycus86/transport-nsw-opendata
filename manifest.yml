@@ -1,0 +1,19 @@
+image: rycus86/tfnsw-server:latest
+manifests:
+  -
+    image: rycus86/tfnsw-server:amd64
+    platform:
+      architecture: amd64
+      os: linux
+  -
+    image: rycus86/tfnsw-server:armhf
+    platform:
+      architecture: arm
+      variant: v6
+      os: linux
+  -
+    image: rycus86/tfnsw-server:aarch64
+    platform:
+      architecture: arm64
+      variant: v8
+      os: linux
