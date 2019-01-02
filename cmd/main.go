@@ -32,7 +32,7 @@ var (
 
 				currentTimetables.Store("sydneytrains", timetable)
 
-				if hadPrevious {
+				if hadPrevious && !previous.(*timetables.Timetable).IsTheSameAs(timetable) {
 					previous.(*timetables.Timetable).Delete()
 				}
 			}

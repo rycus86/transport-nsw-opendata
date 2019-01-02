@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+func (t *Timetable) IsTheSameAs(other *Timetable) bool {
+	return t.f.Name() == other.f.Name()
+}
+
 func (t *Timetable) Delete() error {
 	return os.Remove(t.f.Name())
 }
@@ -34,6 +38,8 @@ func (t *Timetable) FindStation(targetName string) (*Station, error) {
 	}
 
 	reader := csv.NewReader(stopsFile)
+	reader.ReuseRecord = true
+
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		stopId, stopName, parentStation := rec[0], rec[2], rec[9]
 
@@ -80,6 +86,8 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	validServiceIds := map[string]bool{}
 
 	reader := csv.NewReader(calendarFile)
+	reader.ReuseRecord = true
+
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		serviceId, startDate, endDate := rec[0], rec[8], rec[9]
 
@@ -105,6 +113,8 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	defer tripsFile.Close()
 
 	reader = csv.NewReader(tripsFile)
+	reader.ReuseRecord = true
+
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		serviceId, tripId := rec[1], rec[2]
 
@@ -152,6 +162,8 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	var potentialToTrips [][]string
 
 	reader = csv.NewReader(stopTimesFile)
+	reader.ReuseRecord = true
+
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		tripId, stopCode := rec[0], rec[3]
 

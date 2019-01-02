@@ -68,6 +68,7 @@ func NextTrips(timetableSupplier func() *timetables.Timetable) func(http.Respons
 
 		if strings.Contains(accept, "application/json") {
 			writer.Header().Add("Content-Type", "application/json")
+			writer.Header().Add("Cache-Control", "public, max-age=60")
 			writer.WriteHeader(200)
 
 			json.NewEncoder(writer).Encode(trips)
