@@ -67,14 +67,15 @@ func NextTrips(timetableSupplier func() *timetables.Timetable) func(http.Respons
 		}
 
 		accept := request.Header.Get("Accept")
+		format := request.URL.Query().Get("format")
 
-		if strings.Contains(accept, "application/json") {
+		if strings.Contains(accept, "application/json") || strings.ToLower(format) == "json" {
 			writer.Header().Add("Content-Type", "application/json")
 			writer.Header().Add("Cache-Control", "public, max-age=60")
 			writer.WriteHeader(200)
 
 			json.NewEncoder(writer).Encode(trips)
-		} else if strings.Contains(accept, "text/html") {
+		} else if strings.Contains(accept, "text/html") || strings.ToLower(format) == "html" {
 			writer.Header().Add("Content-Type", "text/html")
 			writer.Header().Add("Cache-Control", "public, max-age=60")
 			writer.WriteHeader(200)
