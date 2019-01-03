@@ -1,33 +1,27 @@
 package timetables
 
 import (
-	"archive/zip"
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"sort"
 	"strings"
 	"time"
 )
 
 func (t *Timetable) IsTheSameAs(other *Timetable) bool {
-	return t.f.Name() == other.f.Name()
+	return t.dir == other.dir
 }
 
 func (t *Timetable) Delete() error {
-	return os.Remove(t.f.Name())
+	return os.RemoveAll(t.dir)
 }
 
 func (t *Timetable) FindStation(targetName string) (*Station, error) {
-	r, err := zip.OpenReader(t.f.Name())
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-
-	stopsFile, err := findFile(r, "stops.txt")
+	stopsFile, err := findFile(t, "stops.txt")
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +32,6 @@ func (t *Timetable) FindStation(targetName string) (*Station, error) {
 	}
 
 	reader := csv.NewReader(stopsFile)
-	reader.ReuseRecord = true
 
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		stopId, stopName, parentStation := rec[0], rec[2], rec[9]
@@ -71,13 +64,7 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	tnow := now.Format("15:04:05")
 	dnow := now.Format("20060102")
 
-	r, err := zip.OpenReader(s.timetable.f.Name())
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-
-	calendarFile, err := findFile(r, "calendar.txt")
+	calendarFile, err := findFile(s.timetable, "calendar.txt")
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +73,6 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	validServiceIds := map[string]bool{}
 
 	reader := csv.NewReader(calendarFile)
-	reader.ReuseRecord = true
 
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		serviceId, startDate, endDate := rec[0], rec[8], rec[9]
@@ -106,14 +92,13 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 
 	validTrips := map[string]bool{}
 
-	tripsFile, err := findFile(r, "trips.txt")
+	tripsFile, err := findFile(s.timetable, "trips.txt")
 	if err != nil {
 		return nil, err
 	}
 	defer tripsFile.Close()
 
 	reader = csv.NewReader(tripsFile)
-	reader.ReuseRecord = true
 
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		serviceId, tripId := rec[1], rec[2]
@@ -123,7 +108,7 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 		}
 	}
 
-	stopTimesFile, err := findFile(r, "stop_times.txt")
+	stopTimesFile, err := findFile(s.timetable, "stop_times.txt")
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +147,6 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	var potentialToTrips [][]string
 
 	reader = csv.NewReader(stopTimesFile)
-	reader.ReuseRecord = true
 
 	for rec, err := reader.Read(); err == nil; rec, err = reader.Read() {
 		tripId, stopCode := rec[0], rec[3]
@@ -237,12 +221,6 @@ func (s *Station) FindTripsTo(target *Station, limit int) ([]Trip, error) {
 	return toTrips[0:limit], nil
 }
 
-func findFile(r *zip.ReadCloser, name string) (io.ReadCloser, error) {
-	for _, f := range r.File {
-		if f.Name == name {
-			return f.Open()
-		}
-	}
-
-	return nil, errors.New(fmt.Sprintf("no file found with name: %s", name))
+func findFile(t *Timetable, name string) (io.ReadCloser, error) {
+	return os.Open(path.Join(t.dir, name))
 }

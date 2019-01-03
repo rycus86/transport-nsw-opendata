@@ -24,6 +24,8 @@ func init() {
 
 func NextTrips(timetableSupplier func() *timetables.Timetable) func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		defer request.Body.Close()
+
 		reqStart := time.Now()
 		defer func() { tripsHistogram.Observe(time.Since(reqStart).Seconds()) }()
 

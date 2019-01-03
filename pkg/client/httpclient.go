@@ -40,10 +40,10 @@ func init() {
 	prometheus.MustRegister(downloadCount, cachedCount, errorCount)
 }
 
-func (c *HttpClient) FetchBinary(url string) (*os.File, error) {
+func (c *HttpClient) FetchBinary(url string) (string, error) {
 	if cached := c.getCachedItem(url); cached != nil {
 		cachedCount.With(prometheus.Labels{"url": url}).Inc()
-		return cached.(*os.File), nil
+		return cached.(string), nil
 	}
 
 	response, err := c.client.Get(url)
@@ -64,6 +64,7 @@ func (c *HttpClient) FetchBinary(url string) (*os.File, error) {
 	if err != nil {
 		return retError(url, err)
 	}
+	defer tmpFile.Close()
 
 	if _, err := io.Copy(tmpFile, response.Body); err != nil {
 		return retError(url, err)
@@ -72,18 +73,18 @@ func (c *HttpClient) FetchBinary(url string) (*os.File, error) {
 	if lastModified := response.Header.Get("Last-Modified"); lastModified != "" {
 		c.cachedItems[url] = cachedItem{
 			lastModified: lastModified,
-			value:        tmpFile,
+			value:        tmpFile.Name(),
 		}
 	}
 
 	downloadCount.With(prometheus.Labels{"url": url}).Inc()
 
-	return tmpFile, nil
+	return tmpFile.Name(), nil
 }
 
-func retError(url string, err error) (*os.File, error) {
+func retError(url string, err error) (string, error) {
 	errorCount.With(prometheus.Labels{"url": url}).Inc()
-	return nil, err
+	return "", err
 }
 
 func (c *HttpClient) getCachedItem(url string) interface{} {

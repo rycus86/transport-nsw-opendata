@@ -1,9 +1,7 @@
 package timetables
 
-import "os"
-
 type Timetable struct {
-	f *os.File
+	dir string
 }
 
 type Station struct {
